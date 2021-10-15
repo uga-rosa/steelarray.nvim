@@ -144,4 +144,89 @@ function vector.histogram(v, bins, range, density)
   return hist, bin_edges
 end
 
+---Some kind of calculation.
+---@param a vector
+---@param b vector
+---@return vector
+---@overload fun(a: number, b:vector): vector
+---@overload fun(a: vector, b:number): vector
+local function vec_calc(a, b, cal)
+  local typeA = type(a)
+  local typeB = type(b)
+  local res = {}
+  if typeA == "table" and typeB == "table" then
+    assert(#a == #b, ("attempt to subtract between vectors of different sizes (%s and %s)"):format(#a, #b))
+    for i = 1, #a do
+      res[i] = cal(a[i] - b[i])
+    end
+  elseif typeA == "number" and typeB == "table" then
+    for i = 1, #b do
+      res[i] = cal(a - b[i])
+    end
+  elseif typeA == "table" and typeB == "number" then
+    for i = 1, #a do
+      res[i] = cal(a[i] - b)
+    end
+  else
+    assert(false, ("attempt to subtract between %s and %s"):format(typeA, typeB))
+  end
+  return res
+end
+
+local function add(a, b)
+  return a + b
+end
+
+---Addition
+---@param a vector
+---@param b vector
+---@return vector
+---@overload fun(a: number, b:vector): vector
+---@overload fun(a: vector, b:number): vector
+function vector.add(a, b)
+  return vec_calc(a, b, add)
+end
+
+local function sub(a, b)
+  return a - b
+end
+
+---Subtraction
+---@param a vector
+---@param b vector
+---@return vector
+---@overload fun(a: number, b:vector): vector
+---@overload fun(a: vector, b:number): vector
+function vector.sub(a, b)
+  return vec_calc(a, b, sub)
+end
+
+local function mul(a, b)
+  return a * b
+end
+
+---Multiplication
+---@param a vector
+---@param b vector
+---@return vector
+---@overload fun(a: number, b:vector): vector
+---@overload fun(a: vector, b:number): vector
+function vector.mul(a, b)
+  return vec_calc(a, b, mul)
+end
+
+local function div(a, b)
+  return a / b
+end
+
+---Division
+---@param a vector
+---@param b vector
+---@return vector
+---@overload fun(a: number, b:vector): vector
+---@overload fun(a: vector, b:number): vector
+function vector.div(a, b)
+  return vec_calc(a, b, div)
+end
+
 return vector

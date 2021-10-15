@@ -138,19 +138,6 @@ function Array.map(t, func)
   return array.new(res)
 end
 
----Applies func to every element in t modifying it directly.
----This is faster than map, so if you don't want to reuse the original array, use this one.
----@generic T1, T2
----@param t T1[] Array
----@param func fun(x: T1): T2
----@return T2[] Array
-function Array.apply(t, func)
-  for i = 1, #t do
-    t[i] = func(t[i])
-  end
-  return t
-end
-
 ---Returns a new Array with all the elements of t that fullfilled the func.
 ---@generic T
 ---@param t T[] Array
@@ -166,24 +153,6 @@ function Array.filter(t, func)
     end
   end
   return array.new(res)
-end
-
----Keeps the elements in t if they fullfilled func.
----This is faster than filter, so if you don't want to reuse the original array, use this one.
----@generic T
----@param t T[] Array
----@param func fun(x: T): boolean
----@return T[] Array
-function Array.keep(t, func)
-  local c = 0
-  for i = 1, #t do
-    if func(t[i]) then
-      c = c + 1
-      t[c] = array.copy(t[i])
-    end
-    t[i] = nil
-  end
-  return t
 end
 
 ---Checks if t contains e.
