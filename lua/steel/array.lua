@@ -1,27 +1,10 @@
-local array = {}
-
 ---@class Array
 local Array = {}
-
----Copies elements recursively.
----@generic T
----@param t T[]
----@return T[]
-function array.copy(t)
-  if type(t) ~= "table" then
-    return t
-  end
-  local res = {}
-  for i = 1, #t do
-    res[i] = array.copy(t[i])
-  end
-  return setmetatable(res, getmetatable(t))
-end
 
 ---Checks if t is an array.
 ---@param t table
 ---@return boolean
-function array.is_array(t)
+function Array.is_array(t)
   local c = 0
   for _ in pairs(t) do
     c = c + 1
@@ -32,13 +15,13 @@ end
 ---Recursively checks if t is an array.
 ---@param t table
 ---@return boolean
-function array.is_array_deep(t)
+function Array.is_array_deep(t)
   local r = true
   local c = 0
   for _, k in pairs(t) do
     c = c + 1
     if type(k) == "table" then
-      r = array.is_array_deep(k)
+      r = Array.is_array_deep(k)
       if not r then
         return r
       end
@@ -52,14 +35,29 @@ end
 ---@param t T[]
 ---@param check? '"shallow"' | '"deep"'
 ---@return T[] Array
-function array.new(t, check)
+function Array.new(t, check)
   assert(type(t) == "table", "This is not a table")
   if check == "shallow" then
-    assert(array.is_array(t), "This is not an array-like table.")
+    assert(Array.is_array(t), "This is not an array-like table.")
   elseif check == "deep" then
-    assert(array.is_array_deep(t), "This is not an array-like table.")
+    assert(Array.is_array_deep(t), "This is not an array-like table.")
   end
   return setmetatable(t, { __index = Array })
+end
+
+---Copies elements recursively.
+---@generic T
+---@param t T[]
+---@return T[]
+function Array.copy(t)
+  if type(t) ~= "table" then
+    return t
+  end
+  local res = {}
+  for i = 1, #t do
+    res[i] = Array.copy(t[i])
+  end
+  return setmetatable(res, getmetatable(t))
 end
 
 ---Returns an array of step (default: 1) increments from start to last.
@@ -67,13 +65,13 @@ end
 ---@param last integer
 ---@param step? integer
 ---@return integer[]
-function array.range(start, last, step)
+function Array.range(start, last, step)
   step = step or 1
   local t = {}
   for i = start, last, step do
     t[#t + 1] = i
   end
-  return array.new(t)
+  return Array.new(t)
 end
 
 ---Returns a new array with the element e repeated n times.
@@ -81,12 +79,12 @@ end
 ---@param e T
 ---@param n number
 ---@return T[] Array
-function array.mono(e, n)
+function Array.repeats(e, n)
   local res = {}
   for i = 1, n do
-    res[i] = array.copy(e)
+    res[i] = Array.copy(e)
   end
-  return array.new(res)
+  return Array.new(res)
 end
 
 ---Returns a new array with the elements of t repeated n times.
@@ -94,33 +92,33 @@ end
 ---@param t T[]
 ---@param n number
 ---@return T[] Array
-function array.cycle(t, n)
+function Array.cycle(t, n)
   local res = {}
   local len = #t
   local c = 0
   for _ = 1, n do
     for j = 1, len do
       c = c + 1
-      res[c] = array.copy(t[j])
+      res[c] = Array.copy(t[j])
     end
   end
-  return array.new(res)
+  return Array.new(res)
 end
 
 ---Takes multiple array and returns a concatenated array.
 ---@vararg any[]
 ---@return any[] Array
-function array.concat(...)
+function Array.concat(...)
   local res = {}
   local c = 0
   local args = { ... }
   for i = 1, #args do
     for j = 1, #args[i] do
       c = c + 1
-      res[c] = array.copy(args[i][j])
+      res[c] = Array.copy(args[i][j])
     end
   end
-  return array.new(res)
+  return Array.new(res)
 end
 
 ----- Array method from here. -----
@@ -135,7 +133,7 @@ function Array.map(t, func)
   for i = 1, #t do
     res[i] = func(t[i])
   end
-  return array.new(res)
+  return Array.new(res)
 end
 
 ---Returns a new Array with all the elements of t that fullfilled the func.
@@ -149,10 +147,50 @@ function Array.filter(t, func)
   for i = 1, #t do
     if func(t[i]) then
       c = c + 1
-      res[c] = array.copy(t[i])
+      res[c] = Array.copy(t[i])
     end
   end
-  return array.new(res)
+  return Array.new(res)
+end
+
+---Deletes the elements of the array t at positions `first..last`
+---@generic T
+---@param t T[]
+---@param first integer
+---@param last integer
+---@return T[]
+function Array.delete(t, first, last)
+  local res = {}
+  local c = 0
+  for i = 1, #t do
+    if i < first or i > last then
+      c = c + 1
+      res[c] = t[i]
+    end
+  end
+  return Array.new(res)
+end
+
+---Returns the array with the elements inserted from src into t at position pos.
+---@generic T
+---@param t T[]
+---@param src T[]
+---@param pos integer
+---@return T[]
+function Array.insert(t, src, pos)
+  src = type(src) == "table" and src or { src }
+  pos = pos or 1
+  local res = {}
+  for i = 1, pos - 1 do
+    res[i] = t[i]
+  end
+  for i = 1, #src do
+    res[pos - 1 + i] = src[i]
+  end
+  for i = pos, #t do
+    res[#src + i] = t[i]
+  end
+  return Array.new(res)
 end
 
 ---Checks if t contains e.
@@ -169,7 +207,7 @@ function Array.contain(t, e)
   return false
 end
 
----Returns how many e's are contained in t.
+---Returns how many e's are contained in the array t.
 ---@generic T
 ---@param t T[] Array
 ---@param e T
@@ -198,7 +236,7 @@ function Array.any(t, func)
   return false
 end
 
----Checks if some element of t fullfilled func.
+---Checks if any element of t fullfilled func.
 ---@generic T
 ---@param t T[] Array
 ---@param func fun(x: T): boolean
@@ -212,7 +250,7 @@ function Array.all(t, func)
   return true
 end
 
----Returns a new Array without duplicates.
+---Returns the array without duplicates.
 ---@generic T
 ---@param t T[] Array
 ---@return T[] Array
@@ -222,24 +260,24 @@ function Array.deduplicate(t)
   for i = 1, #t do
     if not Array.contain(res, t[i]) then
       c = c + 1
-      res[c] = array.copy(t[i])
+      res[c] = Array.copy(t[i])
     end
   end
-  return array.new(res)
+  return Array.new(res)
 end
 
----Returns a copy of the sorted array t.
+---Returns the copy of the sorted array t.
 ---@generic T
 ---@param t T[] Array
----@param cmp? fun(x: T, y: T): boolean
+---@param cmp? fun(x: T, y: T): boolean #default: `<`
 ---@return T[] Array
 function Array.sort(t, cmp)
-  local res = array.copy(t)
+  local res = Array.copy(t)
   table.sort(res, cmp)
   return res
 end
 
----Flattens array t
+---Flattens the array t
 ---@param t any[] Array
 ---@return any[] Array
 function Array.flatten(t)
@@ -254,25 +292,25 @@ function Array.flatten(t)
     end
   end
   _flatten(t)
-  return array.new(res)
+  return Array.new(res)
 end
 
----Returns a new array with a combination of self and arr.
+---Returns the array with a combination of t1 and t1.
 ---If one array is shorter, the remaining elemants in the longer are discarded.
 ---@generic T1, T2
----@param t T1[] Array
----@param arr T2[] Array
+---@param t1 T1[] Array
+---@param t2 T2[] Array
 ---@return {x: T1, y: T2}[] Array
-function Array.zip(t, arr)
+function Array.zip(t1, t2)
   local res = {}
-  local len = #t < #arr and #t or #arr
+  local len = #t1 < #t2 and #t1 or #t2
   for i = 1, len do
-    res[i] = { t[i], arr[i] }
+    res[i] = { t1[i], t2[i] }
   end
-  return array.new(res)
+  return Array.new(res)
 end
 
----Unzipping an array of an array with two elements and returns each.
+---Unzipping the array of the array with two elements and returns each.
 ---@generic T1, T2
 ---@param t {x: T1, y: T2}[] Array
 ---@return T1[] Array, T2[] Array
@@ -282,10 +320,10 @@ function Array.unzip(t)
     res1[i] = t[i][1]
     res2[i] = t[i][2]
   end
-  return array.new(res1), array.new(res2)
+  return Array.new(res1), Array.new(res2)
 end
 
----Slice an array t and returns it.
+---Returns the slice of the array t.
 ---Negative numbers can also be used for start and last.
 ---@generic T
 ---@param t T[]
@@ -303,10 +341,10 @@ function Array.slice(t, start, last)
   for i = start, last do
     res[#res + 1] = t[i]
   end
-  return array.new(res)
+  return Array.new(res)
 end
 
----Reverses array t.
+---Reverses the content of the array t.
 ---@generic T
 ---@param t T[] Array
 ---@return T[] Array
@@ -320,13 +358,13 @@ function Array.reverse(t)
   return t
 end
 
----Returns a copy of array t reversed.
+---Returns the reverse of the array t.
 ---@generic T
 ---@param t T[] Array
 ---@return T[] Array
 function Array.reversed(t)
-  local res = array.copy(t)
+  local res = Array.copy(t)
   return Array.reverse(res)
 end
 
-return setmetatable(array, { __index = Array })
+return Array
