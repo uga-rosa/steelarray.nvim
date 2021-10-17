@@ -112,7 +112,7 @@ function Array.cycle(t, n)
   return Array.new(res)
 end
 
----Takes multiple array and returns a concatenated array.
+---Returns the array combined multiple arrays.
 ---@vararg any[]
 ---@return any[] Array
 function Array.concat(...)
@@ -130,7 +130,7 @@ end
 
 ----- Array method from here. -----
 
----Returns a new Array with the result of func applied to all the elements in t.
+---Returns the Array with the result of func applied to all the elements in t.
 ---@generic T1, T2
 ---@param t T1[] Array
 ---@param func fun(a: T1): T2
@@ -144,7 +144,7 @@ function Array.map(t, func)
   return Array.new(res)
 end
 
----Returns a new Array with all the elements of t that fullfilled the func.
+---Returns the Array with all the elements of t that fullfilled the func.
 ---@generic T
 ---@param t T[] Array
 ---@param func fun(x: T): boolean
@@ -162,6 +162,31 @@ function Array.filter(t, func)
   return Array.new(res)
 end
 
+local function in_range(t, first, last)
+  is_table(t)
+  if type(first) ~= "number" then
+    error("The argument first must be a number, but " .. type(first))
+  elseif first == 0 then
+    error("The argument first should not be zero")
+  elseif first < 0 then
+    first = #t + first + 1
+  elseif first > #t then
+    error("The argument first is grater than t's length: " .. first .. " > " .. #t)
+  end
+  last = last or #t
+  if type(last) ~= "number" then
+    error("The argument last must be a number, but " .. type(last))
+  elseif last == 0 then
+    error("The argument last should not be zero")
+  elseif last < 0 then
+    last = #t + last + 1
+  elseif last > #t then
+    error("The argument last is grater than t's length: " .. last .. " > " .. #t)
+  end
+  assert(first <= last, "first is grater than last: " .. first .. " > " .. last)
+  return first, last
+end
+
 ---Deletes the elements of the array t at positions `first..last`
 ---@generic T
 ---@param t T[]
@@ -169,7 +194,7 @@ end
 ---@param last integer
 ---@return T[]
 function Array.delete(t, first, last)
-  is_table(t)
+  first, last = in_range(t, first, last)
   local res = {}
   local c = 0
   for i = 1, #t do
@@ -185,12 +210,12 @@ end
 ---@generic T
 ---@param t T[]
 ---@param src T[]
----@param pos integer
+---@param pos? integer
 ---@return T[]
 function Array.insert(t, src, pos)
   is_table(t)
   src = type(src) == "table" and src or { src }
-  pos = pos or 1
+  pos = pos or #t
   local res = {}
   for i = 1, pos - 1 do
     res[i] = t[i]
@@ -200,6 +225,22 @@ function Array.insert(t, src, pos)
   end
   for i = pos, #t do
     res[#src + i] = t[i]
+  end
+  return Array.new(res)
+end
+
+---Returns the slice of the array t.
+---Negative numbers can also be used for first and last.
+---@generic T
+---@param t T[]
+---@param first integer
+---@param last? integer
+---@return T[] Array
+function Array.slice(t, first, last)
+  first, last = in_range(t, first, last)
+  local res = {}
+  for i = first, last do
+    res[#res + 1] = t[i]
   end
   return Array.new(res)
 end
@@ -235,7 +276,7 @@ function Array.count(t, e)
   return res
 end
 
----Checks if all the elements of t fullfilled func.
+---Checks if any element of t fullfilled func.
 ---@generic T
 ---@param t T[] Array
 ---@param func fun(x: T): boolean
@@ -250,7 +291,7 @@ function Array.any(t, func)
   return false
 end
 
----Checks if any element of t fullfilled func.
+---Checks if all the elements of t fullfilled func.
 ---@generic T
 ---@param t T[] Array
 ---@param func fun(x: T): boolean
@@ -342,28 +383,6 @@ function Array.unzip(t)
     res2[i] = t[i][2]
   end
   return Array.new(res1), Array.new(res2)
-end
-
----Returns the slice of the array t.
----Negative numbers can also be used for first and last.
----@generic T
----@param t T[]
----@param first integer
----@param last? integer
----@return T[] Array
-function Array.slice(t, first, last)
-  is_table(t)
-  last = last or #t
-  first = first > 0 and first or #t + first + 1
-  last = last > 0 and last or #t + last + 1
-  assert(first <= #t, ("first (%s) is grater than t's length (%s)"):format(first, #t))
-  assert(last <= #t, ("last (%s) is grater than t's length (%s)"):format(last, #t))
-  assert(first <= last, ("first (%s) is grater than last (%s)"):format(first, last))
-  local res = {}
-  for i = first, last do
-    res[#res + 1] = t[i]
-  end
-  return Array.new(res)
 end
 
 ---Reverses the content of the array t.
