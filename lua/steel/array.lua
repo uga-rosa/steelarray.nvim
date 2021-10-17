@@ -1,6 +1,10 @@
 ---@class Array
 local Array = {}
 
+local function is_table(t)
+  assert(type(t) == "table", "t must be table")
+end
+
 ---Checks if t is an array.
 ---@param t table
 ---@return boolean
@@ -36,7 +40,7 @@ end
 ---@param check? '"shallow"' | '"deep"'
 ---@return T[] Array
 function Array.new(t, check)
-  assert(type(t) == "table", "This is not a table")
+  is_table(t)
   if check == "shallow" then
     assert(Array.is_array(t), "This is not an array-like table.")
   elseif check == "deep" then
@@ -60,15 +64,18 @@ function Array.copy(t)
   return setmetatable(res, getmetatable(t))
 end
 
----Returns an array of step (default: 1) increments from start to last.
----@param start integer
+---Returns an array of step (default: 1) increments from first to last.
+---@param first integer
 ---@param last integer
 ---@param step? integer
 ---@return integer[]
-function Array.range(start, last, step)
+function Array.range(first, last, step)
+  if type(first) ~= "number" or type(last) ~= "number" then
+    error("first and last must be number")
+  end
   step = step or 1
   local t = {}
-  for i = start, last, step do
+  for i = first, last, step do
     t[#t + 1] = i
   end
   return Array.new(t)
@@ -129,6 +136,7 @@ end
 ---@param func fun(a: T1): T2
 ---@return T2[] Array
 function Array.map(t, func)
+  is_table(t)
   local res = {}
   for i = 1, #t do
     res[i] = func(t[i])
@@ -142,6 +150,7 @@ end
 ---@param func fun(x: T): boolean
 ---@return T[] Array
 function Array.filter(t, func)
+  is_table(t)
   local res = {}
   local c = 0
   for i = 1, #t do
@@ -160,6 +169,7 @@ end
 ---@param last integer
 ---@return T[]
 function Array.delete(t, first, last)
+  is_table(t)
   local res = {}
   local c = 0
   for i = 1, #t do
@@ -178,6 +188,7 @@ end
 ---@param pos integer
 ---@return T[]
 function Array.insert(t, src, pos)
+  is_table(t)
   src = type(src) == "table" and src or { src }
   pos = pos or 1
   local res = {}
@@ -199,6 +210,7 @@ end
 ---@param e T
 ---@return boolean
 function Array.contain(t, e)
+  is_table(t)
   for i = 1, #t do
     if e == t[i] then
       return true
@@ -213,6 +225,7 @@ end
 ---@param e T
 ---@return integer
 function Array.count(t, e)
+  is_table(t)
   local res = 0
   for i = 1, #t do
     if e == t[i] then
@@ -228,6 +241,7 @@ end
 ---@param func fun(x: T): boolean
 ---@return boolean
 function Array.any(t, func)
+  is_table(t)
   for i = 1, #t do
     if func(t[i]) then
       return true
@@ -242,6 +256,7 @@ end
 ---@param func fun(x: T): boolean
 ---@return boolean
 function Array.all(t, func)
+  is_table(t)
   for i = 1, #t do
     if not func(t[i]) then
       return false
@@ -255,6 +270,7 @@ end
 ---@param t T[] Array
 ---@return T[] Array
 function Array.deduplicate(t)
+  is_table(t)
   local res = {}
   local c = 0
   for i = 1, #t do
@@ -272,6 +288,7 @@ end
 ---@param cmp? fun(x: T, y: T): boolean #default: `<`
 ---@return T[] Array
 function Array.sort(t, cmp)
+  is_table(t)
   local res = Array.copy(t)
   table.sort(res, cmp)
   return res
@@ -281,6 +298,7 @@ end
 ---@param t any[] Array
 ---@return any[] Array
 function Array.flatten(t)
+  is_table(t)
   local res = {}
   local function _flatten(arr)
     for i = 1, #arr do
@@ -302,6 +320,8 @@ end
 ---@param t2 T2[] Array
 ---@return {x: T1, y: T2}[] Array
 function Array.zip(t1, t2)
+  is_table(t1)
+  is_table(t2)
   local res = {}
   local len = #t1 < #t2 and #t1 or #t2
   for i = 1, len do
@@ -315,6 +335,7 @@ end
 ---@param t {x: T1, y: T2}[] Array
 ---@return T1[] Array, T2[] Array
 function Array.unzip(t)
+  is_table(t)
   local res1, res2 = {}, {}
   for i = 1, #t do
     res1[i] = t[i][1]
@@ -324,21 +345,22 @@ function Array.unzip(t)
 end
 
 ---Returns the slice of the array t.
----Negative numbers can also be used for start and last.
+---Negative numbers can also be used for first and last.
 ---@generic T
 ---@param t T[]
----@param start integer
+---@param first integer
 ---@param last? integer
 ---@return T[] Array
-function Array.slice(t, start, last)
+function Array.slice(t, first, last)
+  is_table(t)
   last = last or #t
-  start = start > 0 and start or #t + start + 1
+  first = first > 0 and first or #t + first + 1
   last = last > 0 and last or #t + last + 1
-  assert(start <= #t, ("start (%s) is grater than t's length (%s)"):format(start, #t))
+  assert(first <= #t, ("first (%s) is grater than t's length (%s)"):format(first, #t))
   assert(last <= #t, ("last (%s) is grater than t's length (%s)"):format(last, #t))
-  assert(start <= last, ("start (%s) is grater than last (%s)"):format(start, last))
+  assert(first <= last, ("first (%s) is grater than last (%s)"):format(first, last))
   local res = {}
-  for i = start, last do
+  for i = first, last do
     res[#res + 1] = t[i]
   end
   return Array.new(res)
@@ -349,6 +371,7 @@ end
 ---@param t T[] Array
 ---@return T[] Array
 function Array.reverse(t)
+  is_table(t)
   local i, n = 1, #t
   while i < n do
     t[i], t[n] = t[n], t[i]
@@ -363,8 +386,55 @@ end
 ---@param t T[] Array
 ---@return T[] Array
 function Array.reversed(t)
+  is_table(t)
   local res = Array.copy(t)
   return Array.reverse(res)
+end
+
+---Returns the result of left convolution.
+---@generic T
+---@param t T[]
+---@param func fun(a: T, b: T): T
+---@param first? T
+---@return T
+function Array.foldl(t, func, first)
+  is_table(t)
+  assert(#t > 0, "Can't fold empty array")
+  local res, start
+  if first then
+    res = first
+    start = 1
+  else
+    res = t[1]
+    start = 2
+  end
+  for i = start, #t do
+    res = func(res, t[i])
+  end
+  return res
+end
+
+---Returns the result of right convolution.
+---@generic T
+---@param t T[]
+---@param func fun(a: T, b: T): T
+---@param first? T
+---@return T
+function Array.foldr(t, func, first)
+  is_table(t)
+  assert(#t > 0, "Can't fold empty array")
+  local res, start
+  if first then
+    res = first
+    start = #t
+  else
+    res = t[#t]
+    start = #t - 1
+  end
+  for i = start, 1, -1 do
+    res = func(res, t[i])
+  end
+  return res
 end
 
 return Array
