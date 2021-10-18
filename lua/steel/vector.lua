@@ -160,7 +160,7 @@ local function vec_calc(a, b, cal)
   local typeB = type(b)
   local res = {}
   if typeA == "table" and typeB == "table" then
-    assert(#a == #b, ("attempt to subtract between vectors of different sizes (%s and %s)"):format(#a, #b))
+    assert(#a == #b, ("attempt to calculate between vectors of different sizes (%s and %s)"):format(#a, #b))
     for i = 1, #a do
       res[i] = cal(a[i] - b[i])
     end
@@ -173,7 +173,7 @@ local function vec_calc(a, b, cal)
       res[i] = cal(a[i] - b)
     end
   else
-    assert(false, ("attempt to subtract between %s and %s"):format(typeA, typeB))
+    assert(false, ("attempt to calculate between %s and %s"):format(typeA, typeB))
   end
   return res
 end
@@ -232,6 +232,28 @@ end
 ---@overload fun(a: Vector, b:number): Vector
 function vector.div(a, b)
   return vec_calc(a, b, div)
+end
+
+---inner product
+---@param a Vector
+---@param b Vector
+---@return number
+function vector.prod(a, b)
+  if type(a) ~= "table" then
+    error("a must be table")
+  end
+  if type(b) ~= "table" then
+    error("b must be table")
+  end
+  if #a == #b then
+    local res = 0
+    for i = 1, #a do
+      res = res + a[i] * b[i]
+    end
+    return res
+  else
+    error("#a must be equal to #b")
+  end
 end
 
 return vector
