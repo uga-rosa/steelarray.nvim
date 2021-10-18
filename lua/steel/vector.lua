@@ -1,5 +1,10 @@
----@alias vector number[]
+---@class Vector
 local vector = {}
+
+local ok, array = pcall(require, "steel.array")
+if ok then
+  setmetatable(vector, { __index = array })
+end
 
 ---Checks if vec is a vector.
 ---@param vec table
@@ -18,7 +23,7 @@ end
 ---Initializes a vector.
 ---@param num integer
 ---@param init number
----@return vector
+---@return Vector
 function vector.init(num, init)
   init = init or 0
   local res = {}
@@ -29,8 +34,8 @@ function vector.init(num, init)
 end
 
 ---Copies the vector.
----@param vec vector
----@return vector
+---@param vec Vector
+---@return Vector
 function vector.copy(vec)
   local res = {}
   for i = 1, #vec do
@@ -40,7 +45,7 @@ function vector.copy(vec)
 end
 
 ---Finds the maximum value of the vector.
----@param vec vector
+---@param vec Vector
 ---@return number
 function vector.max(vec)
   local res = vec[1]
@@ -53,7 +58,7 @@ function vector.max(vec)
 end
 
 ---Finds the minimum value of the vector.
----@param vec vector
+---@param vec Vector
 ---@return number
 function vector.min(vec)
   local res = vec[1]
@@ -66,7 +71,7 @@ function vector.min(vec)
 end
 
 ---Finds the sum of the vector.
----@param vec vector
+---@param vec Vector
 ---@return number
 function vector.sum(vec)
   local res = vec[1]
@@ -77,14 +82,14 @@ function vector.sum(vec)
 end
 
 ---Finds the mean of the vector.
----@param vec vector
+---@param vec Vector
 ---@return number
 function vector.mean(vec)
   return vector.sum(vec) / #vec
 end
 
 ---Finds the variance of the vector.
----@param vec vector
+---@param vec Vector
 ---@return number
 function vector.variance(vec, unbiased)
   local n = unbiased and #vec - 1 or #vec
@@ -97,19 +102,19 @@ function vector.variance(vec, unbiased)
 end
 
 ---Finds the standard deviation of the vector.
----@param vec vector
+---@param vec Vector
 ---@return number
 function vector.standard_deviation(vec, unbiased)
   return math.sqrt(vector.variance(vec, unbiased))
 end
 
 ---Creates the histogram of the vector.
----@param v vector
+---@param v Vector
 ---@param bins integer
 ---@param range {min: number, max: number}
 ---@param density boolean
----@return vector histogram
----@return vector bin_edges
+---@return Vector histogram
+---@return Vector bin_edges
 function vector.histogram(v, bins, range, density)
   local vec = vector.copy(v)
   table.sort(vec)
@@ -145,11 +150,11 @@ function vector.histogram(v, bins, range, density)
 end
 
 ---Some kind of calculation.
----@param a vector
----@param b vector
----@return vector
----@overload fun(a: number, b:vector): vector
----@overload fun(a: vector, b:number): vector
+---@param a Vector
+---@param b Vector
+---@return Vector
+---@overload fun(a: number, b:Vector): Vector
+---@overload fun(a: Vector, b:number): Vector
 local function vec_calc(a, b, cal)
   local typeA = type(a)
   local typeB = type(b)
@@ -178,11 +183,11 @@ local function add(a, b)
 end
 
 ---Addition
----@param a vector
----@param b vector
----@return vector
----@overload fun(a: number, b:vector): vector
----@overload fun(a: vector, b:number): vector
+---@param a Vector
+---@param b Vector
+---@return Vector
+---@overload fun(a: number, b:Vector): Vector
+---@overload fun(a: Vector, b:number): Vector
 function vector.add(a, b)
   return vec_calc(a, b, add)
 end
@@ -192,11 +197,11 @@ local function sub(a, b)
 end
 
 ---Subtraction
----@param a vector
----@param b vector
----@return vector
----@overload fun(a: number, b:vector): vector
----@overload fun(a: vector, b:number): vector
+---@param a Vector
+---@param b Vector
+---@return Vector
+---@overload fun(a: number, b:Vector): Vector
+---@overload fun(a: Vector, b:number): Vector
 function vector.sub(a, b)
   return vec_calc(a, b, sub)
 end
@@ -206,11 +211,11 @@ local function mul(a, b)
 end
 
 ---Multiplication
----@param a vector
----@param b vector
----@return vector
----@overload fun(a: number, b:vector): vector
----@overload fun(a: vector, b:number): vector
+---@param a Vector
+---@param b Vector
+---@return Vector
+---@overload fun(a: number, b:Vector): Vector
+---@overload fun(a: Vector, b:number): Vector
 function vector.mul(a, b)
   return vec_calc(a, b, mul)
 end
@@ -220,11 +225,11 @@ local function div(a, b)
 end
 
 ---Division
----@param a vector
----@param b vector
----@return vector
----@overload fun(a: number, b:vector): vector
----@overload fun(a: vector, b:number): vector
+---@param a Vector
+---@param b Vector
+---@return Vector
+---@overload fun(a: number, b:Vector): Vector
+---@overload fun(a: Vector, b:number): Vector
 function vector.div(a, b)
   return vec_calc(a, b, div)
 end

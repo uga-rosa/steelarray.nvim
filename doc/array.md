@@ -420,8 +420,8 @@ local a = array.range(1, 5)
   :foldl(function(x, y) return x - y end)
 --> -13
 -- ((((1 - 2) - 3) - 4) - 5)
-local b = array.range(1, 5, 10)
-  :foldl(function(x, y) return x - y end)
+local b = array.range(1, 5)
+  :foldl(function(x, y) return x - y end, 10)
 --> -5
 -- (((((10 - 1) - 2) - 3) - 4) - 5)
 ```
@@ -442,8 +442,8 @@ local a = array.range(1, 5)
   :foldr(function(x, y) return x - y end)
 --> -5
 -- ((((5 - 4) - 3) - 2) - 1)
-local b = array.range(1, 5, 1)
-  :foldr(function(x, y) return x - y end)
+local b = array.range(1, 5)
+  :foldr(function(x, y) return x - y end, 1)
 --> -14
 -- (((((1 - 5) - 4) - 3) - 2) - 1)
 ```
