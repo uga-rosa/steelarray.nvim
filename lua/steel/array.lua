@@ -5,33 +5,78 @@ local function is_table(t)
   assert(type(t) == "table", "t must be table")
 end
 
+---Copies an array recursively.
+---@generic T
+---@param t T[]
+---@return T[]
+function Array.copy(t)
+  if type(t) ~= "table" then
+    return t
+  end
+  local res = {}
+  for i = 1, #t do
+    res[i] = Array.copy(t[i])
+  end
+  return setmetatable(res, getmetatable(t))
+end
+
+---Copies a table recursively.
+---@param t table
+---@return table
+local function tbl_copy(t)
+  if type(t) ~= "table" then
+    return t
+  end
+  local res = {}
+  for k, v in pairs(t) do
+    res[k] = tbl_copy(v)
+  end
+  return setmetatable(res, getmetatable(t))
+end
+
 ---Checks if t is an array.
 ---@param t table
 ---@return boolean
 function Array.is_array(t)
-  local c = 0
-  for _ in pairs(t) do
-    c = c + 1
+  if type(t) ~= "table" then
+    return false
   end
-  return #t == c
+  local _t = tbl_copy(t)
+  for i = 1, #t do
+    if _t[i] == nil then
+      return false
+    end
+    _t[i] = nil
+  end
+  if next(_t) then
+    return false
+  end
+  return true
 end
 
 ---Recursively checks if t is an array.
 ---@param t table
 ---@return boolean
 function Array.is_array_deep(t)
-  local r = true
-  local c = 0
-  for _, k in pairs(t) do
-    c = c + 1
-    if type(k) == "table" then
-      r = Array.is_array_deep(k)
-      if not r then
-        return r
+  local function _is_array(t2)
+    for i = 1, #t2 do
+      if t2[i] == nil then
+        return false
+      elseif type(t2[i]) == "table" then
+        if not _is_array(t2[i]) then
+          return false
+        end
       end
+      t2[i] = nil
     end
+    if next(t2) then
+      return false
+    end
+    return true
   end
-  return r and #t == c
+
+  local _t = tbl_copy(t)
+  return _is_array(_t)
 end
 
 ---Returns a new instance of Array.
@@ -47,21 +92,6 @@ function Array.new(t, check)
     assert(Array.is_array_deep(t), "This is not an array-like table.")
   end
   return setmetatable(t, { __index = Array })
-end
-
----Copies elements recursively.
----@generic T
----@param t T[]
----@return T[]
-function Array.copy(t)
-  if type(t) ~= "table" then
-    return t
-  end
-  local res = {}
-  for i = 1, #t do
-    res[i] = Array.copy(t[i])
-  end
-  return setmetatable(res, getmetatable(t))
 end
 
 ---Returns an array of step (default: 1) increments from first to last.

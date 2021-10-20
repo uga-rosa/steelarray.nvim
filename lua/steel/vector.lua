@@ -1,23 +1,39 @@
 ---@class Vector
 local vector = {}
 
-local ok, array = pcall(require, "steel.array")
-if ok then
-  setmetatable(vector, { __index = array })
+local function is_table(t)
+  return type(t) == "table"
 end
 
----Checks if vec is a vector.
----@param vec table
----@return boolean
-function vector.is_vector(vec)
-  local c = 0
-  for _, v in pairs(vec) do
-    if type(v) ~= "number" then
+local function tbl_copy(t)
+  if not is_table(t) then
+    return t
+  end
+  local res = {}
+  for k, v in pairs(t) do
+    res[k] = tbl_copy(v)
+  end
+  return setmetatable(res, getmetatable(t))
+end
+
+---Checks if t is a vector.
+---@param t table
+---@return boolean, string
+function vector.is_vector(t)
+  if not is_table(t) then
+    return false
+  end
+  local _t = tbl_copy(t)
+  for i = 1, #t do
+    if _t[i] == nil or type(_t[i]) ~= "number" then
       return false
     end
-    c = c + 1
+    _t[i] = nil
   end
-  return #vec == c
+  if next(_t) then
+    return false
+  end
+  return true
 end
 
 ---Initializes a vector.
