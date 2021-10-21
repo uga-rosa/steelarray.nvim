@@ -61,78 +61,78 @@ function vector.copy(vec)
 end
 
 ---Finds the maximum value of the vector.
----@param vec Vector
+---@param self Vector
 ---@return number
-function vector.max(vec)
-  local res = vec[1]
-  for i = 2, #vec do
-    if vec[i] > res then
-      res = vec[i]
+function vector:max()
+  local res = self[1]
+  for i = 2, #self do
+    if self[i] > res then
+      res = self[i]
     end
   end
   return res
 end
 
 ---Finds the minimum value of the vector.
----@param vec Vector
+---@param self Vector
 ---@return number
-function vector.min(vec)
-  local res = vec[1]
-  for i = 2, #vec do
-    if vec[i] < res then
-      res = vec[i]
+function vector:min()
+  local res = self[1]
+  for i = 2, #self do
+    if self[i] < res then
+      res = self[i]
     end
   end
   return res
 end
 
 ---Finds the sum of the vector.
----@param vec Vector
+---@param self Vector
 ---@return number
-function vector.sum(vec)
-  local res = vec[1]
-  for i = 2, #vec do
-    res = res + vec[i]
+function vector:sum()
+  local res = self[1]
+  for i = 2, #self do
+    res = res + self[i]
   end
   return res
 end
 
 ---Finds the mean of the vector.
----@param vec Vector
+---@param self Vector
 ---@return number
-function vector.mean(vec)
-  return vector.sum(vec) / #vec
+function vector:mean()
+  return vector.sum(self) / #self
 end
 
 ---Finds the variance of the vector.
----@param vec Vector
+---@param self Vector
 ---@return number
-function vector.variance(vec, unbiased)
-  local n = unbiased and #vec - 1 or #vec
-  local mean = vector.mean(vec)
+function vector:variance(unbiased)
+  local n = unbiased and #self - 1 or #self
+  local mean = vector.mean(self)
   local res = 0
-  for i = 1, #vec do
-    res = res + (vec[i] - mean) ^ 2
+  for i = 1, #self do
+    res = res + (self[i] - mean) ^ 2
   end
   return res / n
 end
 
 ---Finds the standard deviation of the vector.
----@param vec Vector
+---@param self Vector
 ---@return number
-function vector.standard_deviation(vec, unbiased)
-  return math.sqrt(vector.variance(vec, unbiased))
+function vector:standard_deviation(unbiased)
+  return math.sqrt(vector.variance(self, unbiased))
 end
 
 ---Creates the histogram of the vector.
----@param v Vector
+---@param self Vector
 ---@param bins integer
 ---@param range {min: number, max: number}
 ---@param density boolean
 ---@return Vector histogram
 ---@return Vector bin_edges
-function vector.histogram(v, bins, range, density)
-  local vec = vector.copy(v)
+function vector:histogram(bins, range, density)
+  local vec = vector.copy(self)
   table.sort(vec)
   bins = bins or 10
   range = range or { vec[1], vec[#vec] }

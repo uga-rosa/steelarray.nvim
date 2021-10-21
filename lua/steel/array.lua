@@ -1,4 +1,4 @@
----@class Array
+---@class Array: any[]
 local Array = {}
 
 local function is_table(t)
@@ -162,31 +162,28 @@ end
 
 ---Returns the Array with the result of func applied to all the elements in t.
 ---@generic T1, T2
----@param t T1[] Array
+---@param self Array #T1[]
 ---@param func fun(a: T1): T2
----@return T2[] Array
-function Array.map(t, func)
-  is_table(t)
+---@return Array #T2[]
+function Array:map(func)
   local res = {}
-  for i = 1, #t do
-    res[i] = func(t[i])
+  for i = 1, #self do
+    res[i] = func(self[i])
   end
   return Array.new(res)
 end
 
 ---Returns the Array with all the elements of t that fullfilled the func.
----@generic T
----@param t T[] Array
----@param func fun(x: T): boolean
----@return T[] Array
-function Array.filter(t, func)
-  is_table(t)
+---@param self Array
+---@param func fun(a: any): boolean
+---@return Array
+function Array:filter(func)
   local res = {}
   local c = 0
-  for i = 1, #t do
-    if func(t[i]) then
+  for i = 1, #self do
+    if func(self[i]) then
       c = c + 1
-      res[c] = Array.copy(t[i])
+      res[c] = Array.copy(self[i])
     end
   end
   return Array.new(res)
@@ -218,72 +215,67 @@ local function in_range(t, first, last)
 end
 
 ---Deletes the elements of the array t at positions `first..last`
----@generic T
----@param t T[]
+---@param self Array
 ---@param first integer
 ---@param last integer
----@return T[]
-function Array.delete(t, first, last)
-  first, last = in_range(t, first, last)
+---@return Array
+function Array:delete(first, last)
+  first, last = in_range(self, first, last)
   local res = {}
   local c = 0
-  for i = 1, #t do
+  for i = 1, #self do
     if i < first or i > last then
       c = c + 1
-      res[c] = t[i]
+      res[c] = self[i]
     end
   end
   return Array.new(res)
 end
 
 ---Returns the array with the elements inserted from src into t at position pos.
----@generic T
----@param t T[]
----@param src T[]
+---@param self Array
+---@param src Array
 ---@param pos? integer
----@return T[]
-function Array.insert(t, src, pos)
-  is_table(t)
+---@return Array
+function Array:insert(src, pos)
   src = type(src) == "table" and src or { src }
-  pos = pos or #t
+  pos = pos or #self
   local res = {}
   for i = 1, pos - 1 do
-    res[i] = t[i]
+    res[i] = self[i]
   end
   for i = 1, #src do
     res[pos - 1 + i] = src[i]
   end
-  for i = pos, #t do
-    res[#src + i] = t[i]
+  for i = pos, #self do
+    res[#src + i] = self[i]
   end
   return Array.new(res)
 end
 
 ---Returns the slice of the array t.
 ---Negative numbers can also be used for first and last.
----@generic T
----@param t T[]
+---@param self Array
 ---@param first integer
 ---@param last? integer
----@return T[] Array
-function Array.slice(t, first, last)
-  first, last = in_range(t, first, last)
+---@return Array
+function Array:slice(first, last)
+  first, last = in_range(self, first, last)
   local res = {}
   for i = first, last do
-    res[#res + 1] = t[i]
+    res[#res + 1] = self[i]
   end
   return Array.new(res)
 end
 
 ---Checks if t contains e.
----@generic T
----@param t T[] Array
----@param e T
+---@param self Array
+---@param e any
 ---@return boolean
-function Array.contain(t, e)
-  is_table(t)
-  for i = 1, #t do
-    if e == t[i] then
+function Array.contain(self, e)
+  is_table(self)
+  for i = 1, #self do
+    if e == self[i] then
       return true
     end
   end
@@ -291,15 +283,14 @@ function Array.contain(t, e)
 end
 
 ---Returns how many e's are contained in the array t.
----@generic T
----@param t T[] Array
----@param e T
+---@param self Array
+---@param e any
 ---@return integer
-function Array.count(t, e)
-  is_table(t)
+function Array:count(e)
+  is_table(self)
   local res = 0
-  for i = 1, #t do
-    if e == t[i] then
+  for i = 1, #self do
+    if e == self[i] then
       res = res + 1
     end
   end
@@ -307,14 +298,13 @@ function Array.count(t, e)
 end
 
 ---Checks if any element of t fullfilled func.
----@generic T
----@param t T[] Array
----@param func fun(x: T): boolean
+---@param self Array
+---@param func fun(x: any): boolean
 ---@return boolean
-function Array.any(t, func)
-  is_table(t)
-  for i = 1, #t do
-    if func(t[i]) then
+function Array:any(func)
+  is_table(self)
+  for i = 1, #self do
+    if func(self[i]) then
       return true
     end
   end
@@ -322,14 +312,13 @@ function Array.any(t, func)
 end
 
 ---Checks if all the elements of t fullfilled func.
----@generic T
----@param t T[] Array
----@param func fun(x: T): boolean
+---@param self Array
+---@param func fun(x: any): boolean
 ---@return boolean
-function Array.all(t, func)
-  is_table(t)
-  for i = 1, #t do
-    if not func(t[i]) then
+function Array:all(func)
+  is_table(self)
+  for i = 1, #self do
+    if not func(self[i]) then
       return false
     end
   end
@@ -337,17 +326,16 @@ function Array.all(t, func)
 end
 
 ---Returns the array without duplicates.
----@generic T
----@param t T[] Array
----@return T[] Array
-function Array.deduplicate(t)
-  is_table(t)
+---@param self Array
+---@return Array
+function Array:deduplicate()
+  is_table(self)
   local res = {}
   local c = 0
-  for i = 1, #t do
-    if not Array.contain(res, t[i]) then
+  for i = 1, #self do
+    if not Array.contain(res, self[i]) then
       c = c + 1
-      res[c] = Array.copy(t[i])
+      res[c] = Array.copy(self[i])
     end
   end
   return Array.new(res)
@@ -355,21 +343,21 @@ end
 
 ---Returns the copy of the sorted array t.
 ---@generic T
----@param t T[] Array
+---@param self Array
 ---@param cmp? fun(x: T, y: T): boolean #default: `<`
----@return T[] Array
-function Array.sort(t, cmp)
-  is_table(t)
-  local res = Array.copy(t)
+---@return Array
+function Array:sort(cmp)
+  is_table(self)
+  local res = Array.copy(self)
   table.sort(res, cmp)
   return res
 end
 
 ---Flattens the array t
----@param t any[] Array
----@return any[] Array
-function Array.flatten(t)
-  is_table(t)
+---@param self Array
+---@return Array
+function Array:flatten()
+  is_table(self)
   local res = {}
   local function _flatten(arr)
     for i = 1, #arr do
@@ -380,108 +368,106 @@ function Array.flatten(t)
       end
     end
   end
-  _flatten(t)
+  _flatten(self)
   return Array.new(res)
 end
 
 ---Returns the array with a combination of t1 and t1.
 ---If one array is shorter, the remaining elemants in the longer are discarded.
 ---@generic T1, T2
----@param t1 T1[] Array
----@param t2 T2[] Array
----@return {x: T1, y: T2}[] Array
-function Array.zip(t1, t2)
-  is_table(t1)
+---@param self Array T1[]
+---@param t2 Array T2[]
+---@return Array {x: T1, y: T2}[]
+function Array:zip(t2)
+  is_table(self)
   is_table(t2)
   local res = {}
-  local len = #t1 < #t2 and #t1 or #t2
+  local len = #self < #t2 and #self or #t2
   for i = 1, len do
-    res[i] = { t1[i], t2[i] }
+    res[i] = { self[i], t2[i] }
   end
   return Array.new(res)
 end
 
 ---Unzipping the array of the array with two elements and returns each.
 ---@generic T1, T2
----@param t {x: T1, y: T2}[] Array
+---@param self Array #{x: T1, y: T2}[]
 ---@return T1[] Array, T2[] Array
-function Array.unzip(t)
-  is_table(t)
+function Array:unzip()
+  is_table(self)
   local res1, res2 = {}, {}
-  for i = 1, #t do
-    res1[i] = t[i][1]
-    res2[i] = t[i][2]
+  for i = 1, #self do
+    res1[i] = self[i][1]
+    res2[i] = self[i][2]
   end
   return Array.new(res1), Array.new(res2)
 end
 
 ---Reverses the content of the array t.
----@generic T
----@param t T[] Array
----@return T[] Array
-function Array.reverse(t)
-  is_table(t)
-  local i, n = 1, #t
+---@param self Array
+---@return Array
+function Array:reverse()
+  is_table(self)
+  local i, n = 1, #self
   while i < n do
-    t[i], t[n] = t[n], t[i]
+    self[i], self[n] = self[n], self[i]
     i = i + 1
     n = n - 1
   end
-  return t
+  return self
 end
 
 ---Returns the reverse of the array t.
----@generic T
----@param t T[] Array
----@return T[] Array
-function Array.reversed(t)
-  is_table(t)
-  local res = Array.copy(t)
+---@param self Array
+---@return Array
+function Array:reversed()
+  is_table(self)
+  local res = Array.copy(self)
   return Array.reverse(res)
 end
 
 ---Returns the result of left convolution.
 ---@generic T
----@param t T[]
+---@param self Array #T[]
 ---@param func fun(a: T, b: T): T
 ---@param first? T
 ---@return T
-function Array.foldl(t, func, first)
-  is_table(t)
-  assert(#t > 0, "Can't fold empty array")
+function Array:foldl(func, first)
+  is_table(self)
+  assert(#self > 0, "Can't fold empty array")
   local res, start
   if first then
     res = first
     start = 1
   else
-    res = t[1]
+    res = self[1]
     start = 2
   end
-  for i = start, #t do
-    res = func(res, t[i])
+  for i = start, #self do
+    res = func(res, self[i])
   end
   return res
 end
 
 ---Returns the result of right convolution.
 ---@generic T
----@param t T[]
+---@param self Array #T[]
 ---@param func fun(a: T, b: T): T
 ---@param first? T
 ---@return T
-function Array.foldr(t, func, first)
-  is_table(t)
-  assert(#t > 0, "Can't fold empty array")
+function Array:foldr(func, first)
+  is_table(self)
+  assert(#self > 0, "Can't fold empty array")
   local res, start
   if first then
     res = first
-    start = #t
+    start = #self
   else
-    res = t[#t]
-    start = #t - 1
+    res = self[#self]
+    start = #self - 1
   end
   for i = start, 1, -1 do
-    res = func(res, t[i])
+    res = func(res, self[i])
   end
   return res
 end
