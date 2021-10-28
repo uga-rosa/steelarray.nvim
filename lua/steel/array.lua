@@ -81,10 +81,11 @@ end
 
 ---Returns a new instance of Array.
 ---@generic T
----@param t T[]
+---@param t? T[]
 ---@param check? '"shallow"' | '"deep"'
 ---@return T[] Array
 function Array.new(t, check)
+    t = t or {}
     is_table(t)
     if check == "shallow" then
         assert(Array.is_array(t), "This is not an array-like table.")
