@@ -268,11 +268,17 @@ function Array:slice(first, last)
     return Array.new(res)
 end
 
+---Add an element e at the end of self.
+---@param e any
+function Array:append(e)
+    self[#self + 1] = e
+end
+
 ---Checks if t contains e.
 ---@param self Array
 ---@param e any
 ---@return boolean
-function Array.contain(self, e)
+function Array:contain(e)
     is_table(self)
     for i = 1, #self do
         if e == self[i] then

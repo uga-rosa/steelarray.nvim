@@ -211,6 +211,23 @@ local a = array.range(1, 10)
 --> {4, 5, 6, 7}
 ```
 
+#### array.append(t, e)
+
+Add an element e at the end of t.
+
+- parameters
+  - `t`: array
+  - `e`: any
+- return
+  - nil
+
+example
+```lua
+local a = array.new({"a", "b", "c"})
+a:append("d")
+--> {"a", "b", "c", "d"}
+```
+
 #### array.contain(t, e)
 
 Checks if t contains e.
