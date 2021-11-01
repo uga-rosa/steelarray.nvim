@@ -38,13 +38,13 @@ end
 
 ---Initializes a vector.
 ---@param num integer
----@param init number
+---@param value number
 ---@return Vector
-function vector.init(num, init)
-    init = init or 0
+function vector.init(num, value)
+    value = value or 0
     local res = {}
     for i = 1, num do
-        res[i] = init
+        res[i] = value
     end
     return res
 end
@@ -61,78 +61,78 @@ function vector.copy(vec)
 end
 
 ---Finds the maximum value of the vector.
----@param self Vector
+---@param v Vector
 ---@return number
-function vector:max()
-    local res = self[1]
-    for i = 2, #self do
-        if self[i] > res then
-            res = self[i]
+function vector.max(v)
+    local res = v[1]
+    for i = 2, #v do
+        if v[i] > res then
+            res = v[i]
         end
     end
     return res
 end
 
 ---Finds the minimum value of the vector.
----@param self Vector
+---@param v Vector
 ---@return number
-function vector:min()
-    local res = self[1]
-    for i = 2, #self do
-        if self[i] < res then
-            res = self[i]
+function vector.min(v)
+    local res = v[1]
+    for i = 2, #v do
+        if v[i] < res then
+            res = v[i]
         end
     end
     return res
 end
 
 ---Finds the sum of the vector.
----@param self Vector
+---@param v Vector
 ---@return number
-function vector:sum()
-    local res = self[1]
-    for i = 2, #self do
-        res = res + self[i]
+function vector.sum(v)
+    local res = v[1]
+    for i = 2, #v do
+        res = res + v[i]
     end
     return res
 end
 
 ---Finds the mean of the vector.
----@param self Vector
+---@param v Vector
 ---@return number
-function vector:mean()
-    return vector.sum(self) / #self
+function vector.mean(v)
+    return vector.sum(v) / #v
 end
 
 ---Finds the variance of the vector.
----@param self Vector
+---@param v Vector
 ---@return number
-function vector:variance(unbiased)
-    local n = unbiased and #self - 1 or #self
-    local mean = vector.mean(self)
+function vector.variance(v, unbiased)
+    local n = unbiased and #v - 1 or #v
+    local mean = vector.mean(v)
     local res = 0
-    for i = 1, #self do
-        res = res + (self[i] - mean) ^ 2
+    for i = 1, #v do
+        res = res + (v[i] - mean) ^ 2
     end
     return res / n
 end
 
 ---Finds the standard deviation of the vector.
----@param self Vector
+---@param v Vector
 ---@return number
-function vector:standard_deviation(unbiased)
-    return math.sqrt(vector.variance(self, unbiased))
+function vector.sd(v, unbiased)
+    return math.sqrt(vector.variance(v, unbiased))
 end
 
 ---Creates the histogram of the vector.
----@param self Vector
+---@param v Vector
 ---@param bins integer
 ---@param range {min: number, max: number}
 ---@param density boolean
 ---@return Vector histogram
 ---@return Vector bin_edges
-function vector:histogram(bins, range, density)
-    local vec = vector.copy(self)
+function vector.histogram(v, bins, range, density)
+    local vec = vector.copy(v)
     table.sort(vec)
     bins = bins or 10
     range = range or { vec[1], vec[#vec] }
