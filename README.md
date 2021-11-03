@@ -1,5 +1,4 @@
 # steelarray.nvim
 
-Useful functions.
+Useful functions.  
 Use Emmy annotations.  
-It can also be used outside of neovim.
