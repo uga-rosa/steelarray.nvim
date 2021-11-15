@@ -1,9 +1,6 @@
 ---@class Array: any[]
 local Array = {}
-
-local function is_table(t)
-    assert(type(t) == "table", "t must be table")
-end
+Array.__index = Array
 
 ---Copies an array recursively.
 ---@generic T
@@ -20,79 +17,17 @@ function Array.copy(t)
     return setmetatable(res, getmetatable(t))
 end
 
----Copies a table recursively.
----@param t table
----@return table
-local function tbl_copy(t)
-    if type(t) ~= "table" then
-        return t
-    end
-    local res = {}
-    for k, v in pairs(t) do
-        res[k] = tbl_copy(v)
-    end
-    return setmetatable(res, getmetatable(t))
-end
-
----Checks if t is an array.
----@param t table
----@return boolean
-function Array.is_array(t)
-    if type(t) ~= "table" then
-        return false
-    end
-    local _t = tbl_copy(t)
-    for i = 1, #t do
-        if _t[i] == nil then
-            return false
-        end
-        _t[i] = nil
-    end
-    if next(_t) then
-        return false
-    end
-    return true
-end
-
----Recursively checks if t is an array.
----@param t table
----@return boolean
-function Array.is_array_deep(t)
-    local function _is_array(t2)
-        for i = 1, #t2 do
-            if t2[i] == nil then
-                return false
-            elseif type(t2[i]) == "table" then
-                if not _is_array(t2[i]) then
-                    return false
-                end
-            end
-            t2[i] = nil
-        end
-        if next(t2) then
-            return false
-        end
-        return true
-    end
-
-    local _t = tbl_copy(t)
-    return _is_array(_t)
-end
-
 ---Returns a new instance of Array.
----@generic T
----@param t? T[]
----@param check? '"shallow"' | '"deep"'
----@return T[] Array
-function Array.new(t, check)
-    t = t or {}
-    is_table(t)
-    if check == "shallow" then
-        assert(Array.is_array(t), "This is not an array-like table.")
-    elseif check == "deep" then
-        assert(Array.is_array_deep(t), "This is not an array-like table.")
+---@param t? table
+---@param need_check? boolean
+---@return array Array
+function Array.new(t, need_check)
+    if need_check then
+        Array.validate({
+            t = { t, "array", true },
+        })
     end
-    return setmetatable(t, { __index = Array })
+    return setmetatable(t or {}, Array)
 end
 
 ---Returns an array of step (default: 1) increments from first to last.
@@ -101,9 +36,12 @@ end
 ---@param step? integer
 ---@return integer[]
 function Array.range(first, last, step)
-    if type(first) ~= "number" or type(last) ~= "number" then
-        error("first and last must be number")
-    end
+    Array.validate({
+        first = { first, "number" },
+        last = { last, "number" },
+        step = { step, "number", true },
+    })
+
     step = step or 1
     local t = {}
     for i = first, last, step do
@@ -118,6 +56,11 @@ end
 ---@param n number
 ---@return T[] Array
 function Array.repeats(e, n)
+    Array.validate({
+        e = { e, "any" },
+        n = { n, "number" },
+    })
+
     local res = {}
     for i = 1, n do
         res[i] = Array.copy(e)
@@ -131,13 +74,15 @@ end
 ---@param n number
 ---@return T[] Array
 function Array.cycle(t, n)
+    Array.validate({
+        t = { t, "array" },
+        n = { n, "number" },
+    })
+
     local res = {}
-    local len = #t
-    local c = 0
     for _ = 1, n do
-        for j = 1, len do
-            c = c + 1
-            res[c] = Array.copy(t[j])
+        for _, v in ipairs(t) do
+            table.insert(res, v)
         end
     end
     return Array.new(res)
@@ -148,12 +93,13 @@ end
 ---@return any[] Array
 function Array.concat(...)
     local res = {}
-    local c = 0
-    local args = { ... }
-    for i = 1, #args do
-        for j = 1, #args[i] do
-            c = c + 1
-            res[c] = Array.copy(args[i][j])
+    for _, arg in ipairs({ ... }) do
+        if type(arg) == "table" then
+            for _, v in ipairs(arg) do
+                table.insert(res, v)
+            end
+        else
+            table.insert(res, arg)
         end
     end
     return Array.new(res)
@@ -167,6 +113,11 @@ end
 ---@param func fun(a: T1): T2
 ---@return Array #T2[]
 function Array:map(func)
+    Array.validate({
+        self = { self, "array" },
+        func = { func, "function" },
+    })
+
     local res = {}
     for i = 1, #self do
         res[i] = func(self[i])
@@ -179,79 +130,45 @@ end
 ---@param func fun(a: any): boolean
 ---@return Array
 function Array:filter(func)
+    Array.validate({
+        self = { self, "array" },
+        func = { func, "function" },
+    })
+
     local res = {}
-    local c = 0
     for i = 1, #self do
         if func(self[i]) then
-            c = c + 1
-            res[c] = Array.copy(self[i])
+            table.insert(res, self[i])
         end
     end
     return Array.new(res)
 end
 
 local function in_range(t, first, last)
-    is_table(t)
-    if type(first) ~= "number" then
-        error("The argument first must be a number, but " .. type(first))
-    elseif first == 0 then
-        error("The argument first should not be zero")
-    elseif first < 0 then
+    Array.validate({
+        t = { t, "array" },
+        first = { first, "number" },
+        last = { last, "number", true },
+    })
+
+    if first < 0 then
         first = #t + first + 1
+    elseif first == 0 then
+        error("first should not be zero")
     elseif first > #t then
-        error("The argument first is grater than t's length: " .. first .. " > " .. #t)
+        error("first is grater than t's length: " .. first .. " > " .. #t)
     end
+
     last = last or #t
-    if type(last) ~= "number" then
-        error("The argument last must be a number, but " .. type(last))
-    elseif last == 0 then
-        error("The argument last should not be zero")
-    elseif last < 0 then
+    if last < 0 then
         last = #t + last + 1
+    elseif last == 0 then
+        error("last should not be zero")
     elseif last > #t then
-        error("The argument last is grater than t's length: " .. last .. " > " .. #t)
+        error("last is grater than t's length: " .. last .. " > " .. #t)
     end
-    assert(first <= last, "first is grater than last: " .. first .. " > " .. last)
+    assert(first <= last, string.format("first is grater than last: %s > %s", first, last))
     return first, last
-end
-
----Deletes the elements of the array t at positions `first..last`
----@param self Array
----@param first integer
----@param last integer
----@return Array
-function Array:delete(first, last)
-    first, last = in_range(self, first, last)
-    local res = {}
-    local c = 0
-    for i = 1, #self do
-        if i < first or i > last then
-            c = c + 1
-            res[c] = self[i]
-        end
-    end
-    return Array.new(res)
-end
-
----Returns the array with the elements inserted from src into t at position pos.
----@param self Array
----@param src Array
----@param pos? integer
----@return Array
-function Array:insert(src, pos)
-    src = type(src) == "table" and src or { src }
-    pos = pos or #self
-    local res = {}
-    for i = 1, pos - 1 do
-        res[i] = self[i]
-    end
-    for i = 1, #src do
-        res[pos - 1 + i] = src[i]
-    end
-    for i = pos, #self do
-        res[#src + i] = self[i]
-    end
-    return Array.new(res)
 end
 
 ---Returns the slice of the array t.
@@ -264,25 +181,79 @@ function Array:slice(first, last)
     first, last = in_range(self, first, last)
     local res = {}
     for i = first, last do
-        res[#res + 1] = self[i]
+        table.insert(res, self[i])
     end
     return Array.new(res)
 end
 
----Add an element e at the end of self.
+---Deletes the elements of the array t at positions `first..last`
+---@param self Array
+---@param first integer
+---@param last? integer
+---@return Array
+function Array:delete(first, last)
+    first, last = in_range(self, first, last)
+    for _ = first, last do
+        table.remove(self, first)
+    end
+    return self
+end
+
+---Returns the array with the elements inserted from src into t at position pos.
+---@param self Array
+---@param src Array
+---@param pos? integer
+---@return Array
+---Array.insert({1, 2, 3, 4, 5}, {"a", "b", "c"}, 3)
+--- -> {1, 2, "a", "b", "c", 3, 4, 5}
+function Array:insert(src, pos)
+    Array.validate({
+        self = { self, "array" },
+        src = { src, "array" },
+        pos = { pos, "number", true },
+    })
+
+    if pos then
+        for i, v in ipairs(src) do
+            table.insert(self, pos + i - 1, v)
+        end
+    else
+        for _, v in ipairs(src) do
+            table.insert(self, v)
+        end
+    end
+    return self
+end
+
+---Wrapping table.insert as a method.
 ---@param e any
-function Array:append(e)
-    self[#self + 1] = e
+---@param pos? number
+function Array:append(e, pos)
+    Array.validate({
+        self = { self, "array" },
+        e = { e, "any" },
+        pos = { pos, "number", true },
+    })
+
+    if pos then
+        table.insert(self, pos, e)
+    else
+        table.insert(self, e)
+    end
 end
 
 ---Checks if t contains e.
 ---@param self Array
 ---@param e any
 ---@return boolean
-function Array:contain(e)
-    is_table(self)
-    for i = 1, #self do
-        if e == self[i] then
+function Array:contains(e)
+    Array.validate({
+        self = { self, "array" },
+        e = { e, "any" },
+    })
+
+    for _, v in ipairs(self) do
+        if v == e then
             return true
         end
     end
@@ -294,10 +265,14 @@ end
 ---@param e any
 ---@return integer
 function Array:count(e)
-    is_table(self)
+    Array.validate({
+        self = { self, "array" },
+        e = { e, "any" },
+    })
+
     local res = 0
-    for i = 1, #self do
-        if e == self[i] then
+    for _, v in ipairs(self) do
+        if v == e then
             res = res + 1
         end
     end
@@ -309,9 +284,13 @@ end
 ---@param func fun(x: any): boolean
 ---@return boolean
 function Array:any(func)
-    is_table(self)
-    for i = 1, #self do
-        if func(self[i]) then
+    Array.validate({
+        self = { self, "array" },
+        func = { func, "function" },
+    })
+
+    for _, v in ipairs(self) do
+        if func(v) then
             return true
         end
     end
@@ -323,9 +302,13 @@ end
 ---@param func fun(x: any): boolean
 ---@return boolean
 function Array:all(func)
-    is_table(self)
-    for i = 1, #self do
-        if not func(self[i]) then
+    Array.validate({
+        self = { self, "array" },
+        func = { func, "function" },
+    })
+
+    for _, v in ipairs(self) do
+        if not func(v) then
             return false
         end
     end
@@ -336,25 +319,43 @@ end
 ---@param self Array
 ---@return Array
 function Array:deduplicate()
-    is_table(self)
-    local res = {}
-    local c = 0
-    for i = 1, #self do
-        if not Array.contain(res, self[i]) then
-            c = c + 1
-            res[c] = Array.copy(self[i])
+    Array.validate({
+        self = { self, "array" },
+    })
+
+    local res = Array.new()
+    for _, v in ipairs(self) do
+        if not res:contains(v) then
+            res:append(v)
         end
     end
-    return Array.new(res)
+    return res
+end
+
+---Wrapping table.sort as a method.
+---@param self Array
+---@param cmp? fun(x: any, y: any): boolean #default: `<`
+---@return Array
+function Array:sort(cmp)
+    Array.validate({
+        self = { self, "array" },
+        cmp = { cmp, "function", true },
+    })
+
+    table.sort(self, cmp)
+    return self -- for chain
 end
 
 ---Returns the copy of the sorted array t.
----@generic T
 ---@param self Array
----@param cmp? fun(x: T, y: T): boolean #default: `<`
+---@param cmp? fun(x: any, y: any): boolean #default: `<`
 ---@return Array
-function Array:sort(cmp)
-    is_table(self)
+function Array:sorted(cmp)
+    Array.validate({
+        self = { self, "array" },
+        cmp = { cmp, "function", true },
+    })
+
     local res = Array.copy(self)
     table.sort(res, cmp)
     return res
@@ -364,71 +365,45 @@ end
 ---@param self Array
 ---@return Array
 function Array:flatten()
-    is_table(self)
-    local res = {}
+    Array.validate({
+        self = { self, "array" },
+    })
+
+    local res = Array.new()
     local function _flatten(arr)
-        for i = 1, #arr do
-            if type(arr[i]) == "table" then
-                _flatten(arr[i])
+        for _, v in ipairs(arr) do
+            if type(v) == "table" then
+                _flatten(v)
             else
-                table.insert(res, arr[i])
+                res:append(v)
             end
         end
     end
     _flatten(self)
-    return Array.new(res)
-end
-
----Returns the array with a combination of t1 and t1.
----If one array is shorter, the remaining elemants in the longer are discarded.
----@generic T1, T2
----@param self Array T1[]
----@param t2 Array T2[]
----@return Array {x: T1, y: T2}[]
-function Array:zip(t2)
-    is_table(self)
-    is_table(t2)
-    local res = {}
-    local len = #self < #t2 and #self or #t2
-    for i = 1, len do
-        res[i] = { self[i], t2[i] }
-    end
-    return Array.new(res)
-end
-
----Unzipping the array of the array with two elements and returns each.
----@generic T1, T2
----@param self Array #{x: T1, y: T2}[]
----@return T1[] Array, T2[] Array
-function Array:unzip()
-    is_table(self)
-    local res1, res2 = {}, {}
-    for i = 1, #self do
-        res1[i] = self[i][1]
-        res2[i] = self[i][2]
-    end
-    return Array.new(res1), Array.new(res2)
+    return res
 end
 
 ---Reverses the content of the array t.
 ---@param self Array
 ---@return Array
 function Array:reverse()
-    is_table(self)
+    Array.validate({
+        self = { self, "array" },
+    })
+
     local i, n = 1, #self
     while i < n do
         self[i], self[n] = self[n], self[i]
         i = i + 1
         n = n - 1
     end
-    return self
+    return self -- for chain
 end
 
----Returns the reverse of the array t.
+---Returns the copy of reverse of the array self.
 ---@param self Array
 ---@return Array
 function Array:reversed()
-    is_table(self)
     local res = Array.copy(self)
     return Array.reverse(res)
 end
@@ -440,13 +415,18 @@ end
 ---@param first? T
 ---@return T
 function Array:foldl(func, first)
-    is_table(self)
-    assert(#self > 0, "Can't fold empty array")
+    Array.validate({
+        self = { self, "array" },
+        func = { func, "function" },
+    })
+
     local res, start
     if first then
+        assert(#self > 0, "Can't fold empty array")
         res = first
         start = 1
     else
+        assert(#self > 1, "Only one element or less.")
         res = self[1]
         start = 2
     end
@@ -463,13 +443,18 @@ end
 ---@param first? T
 ---@return T
 function Array:foldr(func, first)
-    is_table(self)
-    assert(#self > 0, "Can't fold empty array")
+    Array.validate({
+        self = { self, "array" },
+        func = { func, "function" },
+    })
+
     local res, start
     if first then
+        assert(#self > 0, "Can't fold empty array")
         res = first
         start = #self
     else
+        assert(#self > 1, "Only one element or less.")
         res = self[#self]
         start = #self - 1
     end
@@ -477,6 +462,119 @@ function Array:foldr(func, first)
         res = func(res, self[i])
     end
     return res
+end
+
+local function is_callable(f)
+    if type(f) == "function" then
+        return true
+    end
+    local m = getmetatable(f)
+    if m == nil then
+        return false
+    end
+    return type(m.__call) == "function"
+end
+
+local function _table_copy(t)
+    if type(t) ~= "table" then
+        return t
+    end
+    local res = {}
+    for k, v in pairs(t) do
+        res[k] = _table_copy(v)
+    end
+    return setmetatable(res, getmetatable(t))
+end
+
+local function _is_array(t)
+    if getmetatable(t) == Array then
+        return true
+    end
+
+    if type(t) ~= "table" then
+        return false
+    end
+
+    local _t = _table_copy(t)
+    for i = 1, #_t do
+        if _t[i] == nil then
+            return false
+        end
+        _t[i] = nil
+    end
+    if next(_t) then
+        return false
+    end
+    return true
+end
+
+local function _is_type(val, t)
+    if t == "array" then
+        return _is_array(val)
+    elseif t == "any" then
+        return val ~= nil
+    end
+    return type(val) == t or (t == "callable" and is_callable(val))
+end
+
+local type_names = {
+    array = "array",
+    a = "array",
+    table = "table",
+    t = "table",
+    string = "string",
+    s = "string",
+    number = "number",
+    n = "number",
+    boolean = "boolean",
+    b = "boolean",
+    ["function"] = "function",
+    f = "function",
+    callable = "callable",
+    c = "callable",
+    ["nil"] = "nil",
+    thread = "thread",
+    userdata = "userdata",
+    any = "any",
+}
+
+---vim.validate with array and any (not nil) added.
+---@param opt any
+function Array.validate(opt)
+    if type(opt) ~= "table" then
+        error("opt: expected table, got " .. type(opt), 2)
+    end
+
+    for param_name, spec in pairs(opt) do
+        if type(spec) ~= "table" then
+            error(string.format("opt[%s]: expected table, got %s", param_name, type(spec)), 2)
+        end
+
+        local val = spec[1]
+        local t = spec[2]
+        local optional = spec[3] == true
+
+        if type(t) == "string" then
+            local t_name = type_names[t]
+            if not t_name then
+                error("invalid type name: " .. t, 2)
+            end
+            if not (optional and val == nil or _is_type(val, t_name)) then
+                error(string.format("%s: expected %s, got %s", param_name, t_name, type(val)), 2)
+            end
+        elseif is_callable(t) then
+            local valid, optional_message = t(val)
+            if not valid then
+                local error_message = ("%s: expected %s, got %s"):format(param_name, (spec[3] or "?"), type(val))
+                if optional_message then
+                    error_message = error_message .. ". Info: " .. optional_message
+                end
+                error(error_message, 2)
+            end
+        else
+            error("invalid type name: " .. t, 2)
+        end
+    end
 end
 
 return Array
