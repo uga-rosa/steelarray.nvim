@@ -108,21 +108,29 @@ end
 ----- Array method from here. -----
 
 ---Returns the Array with the result of func applied to all the elements in t.
+---The return value can be omitted by setting the second argument to true.
 ---@generic T1, T2
 ---@param self Array #T1[]
 ---@param func fun(a: T1): T2
+---@param no_return? boolean
 ---@return Array #T2[]
-function Array:map(func)
+function Array:map(func, no_return)
     Array.validate({
         self = { self, "array" },
         func = { func, "function" },
     })
 
-    local res = {}
-    for i = 1, #self do
-        res[i] = func(self[i])
+    if no_return then
+        for _, v in ipairs(self) do
+            func(v)
+        end
+    else
+        local res = Array.new()
+        for i, v in ipairs(self) do
+            res[i] = func(v)
+        end
+        return res
     end
-    return Array.new(res)
 end
 
 ---Returns the Array with all the elements of t that fullfilled the func.
