@@ -472,82 +472,45 @@ function Array:foldr(func, first)
     return res
 end
 
-local function is_callable(f)
-    if type(f) == "function" then
-        return true
-    end
-    local m = getmetatable(f)
-    if m == nil then
-        return false
-    end
-    return type(m.__call) == "function"
-end
-
-local function _table_copy(t)
+local function table_copy(t)
     if type(t) ~= "table" then
         return t
     end
     local res = {}
     for k, v in pairs(t) do
-        res[k] = _table_copy(v)
+        res[k] = table_copy(v)
     end
     return setmetatable(res, getmetatable(t))
 end
 
-local function _is_array(t)
+local function is_array(t)
     if getmetatable(t) == Array then
         return true
     end
 
     if type(t) ~= "table" then
-        return false
+        return false, "not table."
     end
 
-    local _t = _table_copy(t)
+    local _t = table_copy(t)
     for i = 1, #_t do
         if _t[i] == nil then
-            return false
+            return false, "The sequential numbering of the keys is missing."
         end
         _t[i] = nil
     end
     if next(_t) then
-        return false
+        return false, "Non-numeric keys are mixed in."
     end
     return true
 end
 
-local function _is_type(val, t)
-    if t == "array" then
-        return _is_array(val)
-    elseif t == "any" then
-        return val ~= nil
-    end
-    return type(val) == t or (t == "callable" and is_callable(val))
+local function is_any(a)
+    return a ~= nil
 end
 
-local type_names = {
-    array = "array",
-    a = "array",
-    table = "table",
-    t = "table",
-    string = "string",
-    s = "string",
-    number = "number",
-    n = "number",
-    boolean = "boolean",
-    b = "boolean",
-    ["function"] = "function",
-    f = "function",
-    callable = "callable",
-    c = "callable",
-    ["nil"] = "nil",
-    thread = "thread",
-    userdata = "userdata",
-    any = "any",
-}
-
 ---vim.validate with array and any (not nil) added.
----@param opt any
+---@param opt table
 function Array.validate(opt)
     if type(opt) ~= "table" then
         error("opt: expected table, got " .. type(opt), 2)
@@ -562,27 +525,18 @@ function Array.validate(opt)
         local t = spec[2]
         local optional = spec[3] == true
 
-        if type(t) == "string" then
-            local t_name = type_names[t]
-            if not t_name then
-                error("invalid type name: " .. t, 2)
-            end
-            if not (optional and val == nil or _is_type(val, t_name)) then
-                error(string.format("%s: expected %s, got %s", param_name, t_name, type(val)), 2)
-            end
-        elseif is_callable(t) then
-            local valid, optional_message = t(val)
-            if not valid then
-                local error_message = ("%s: expected %s, got %s"):format(param_name, (spec[3] or "?"), type(val))
-                if optional_message then
-                    error_message = error_message .. ". Info: " .. optional_message
-                end
-                error(error_message, 2)
-            end
-        else
-            error("invalid type name: " .. t, 2)
+        if t == "array" then
+            opt[param_name] = { val, is_array, "array" }
+        elseif t == "any" then
+            opt[param_name] = { val, is_any, "any" }
+        end
+
+        if optional and val == nil then
+            opt[param_name] = nil
         end
     end
+
+    vim.validate(opt)
 end
 
 return Array
