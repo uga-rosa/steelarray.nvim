@@ -13,6 +13,14 @@ Set.__tostring = function(self)
     return string.format("set{ %s }", table.concat(t, ", "))
 end
 
+Set.__len = function(self)
+    local sum = 0
+    for _ in pairs(self) do
+        sum = sum + 1
+    end
+    return sum
+end
+
 ---Create a set type instance from an array.
 ---@param arr? Array|any[]
 ---@return Set
