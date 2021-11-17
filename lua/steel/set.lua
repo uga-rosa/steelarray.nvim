@@ -8,9 +8,9 @@ Set.__tostring = function(self)
         table.insert(t, k)
     end
     if #t == 0 then
-        return "{}"
+        return "set{}"
     end
-    return string.format("{ %s }", table.concat(t, ", "))
+    return string.format("set{ %s }", table.concat(t, ", "))
 end
 
 ---Create a set type instance from an array.
@@ -28,6 +28,12 @@ function Set.new(arr)
     end
     return setmetatable(res, Set)
 end
+
+setmetatable(Set, {
+    __call = function(_, a)
+        return Set.new(a)
+    end,
+})
 
 ---Return a copy of set.
 ---@param s Set
@@ -58,11 +64,18 @@ function Set:add(e)
     self[e] = true
 end
 
----Add an element to a set
+---Remove an element from a set
 ---@param self Set
 ---@param e any
 function Set:remove(e)
     self[e] = nil
+end
+
+---Whether e is contained by a set.
+---@param e any
+---@return boolean
+function Set:contains(e)
+    return self[e] == true
 end
 
 ----- Set operation
@@ -118,7 +131,7 @@ Set.__sub = Set.difference
 ---@param self Set
 ---@param s Set
 ---@return Set
-function Set:symmetric_difference(s)
+function Set:xor(s)
     local res = Set.new()
 
     for k, _ in pairs(self) do
@@ -137,7 +150,7 @@ function Set:symmetric_difference(s)
 end
 
 ---The ^ operation is used for XOR
-Set.__pow = Set.symmetric_difference
+Set.__pow = Set.xor
 
 -----
 

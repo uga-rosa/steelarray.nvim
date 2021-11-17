@@ -2,6 +2,17 @@
 local Array = {}
 Array.__index = Array
 
+Array.__tostring = function(self)
+    local t = {}
+    for _, v in ipairs(self) do
+        table.insert(t, v)
+    end
+    if #t == 0 then
+        return "{}"
+    end
+    return string.format("{ %s }", table.concat(t, ", "))
+end
+
 ---Copies an array recursively.
 ---@generic T
 ---@param t T[]
@@ -29,6 +40,12 @@ function Array.new(t, need_check)
     end
     return setmetatable(t or {}, Array)
 end
+
+setmetatable(Array, {
+    __call = function(_, t, c)
+        return Array.new(t, c)
+    end,
+})
 
 ---Returns an array of step (default: 1) increments from first to last.
 ---@param first integer
@@ -332,9 +349,11 @@ function Array:deduplicate()
     })
 
     local res = Array.new()
+    local contained = {}
     for _, v in ipairs(self) do
-        if not res:contains(v) then
-            res:append(v)
+        if not contained[v] then
+            table.insert(res, v)
+            contained[v] = true
         end
     end
     return res
