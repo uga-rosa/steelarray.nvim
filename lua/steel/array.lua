@@ -514,20 +514,29 @@ local function is_array(t)
     end
 
     if type(t) ~= "table" then
-        return false, "not table."
+        return false, "Not table."
     end
 
-    local _t = table_copy(t)
-    for i = 1, #_t do
-        if _t[i] == nil then
-            return false, "The sequential numbering of the keys is missing."
+    local counter = 0
+    local max = 0
+
+    for k, _ in pairs(t) do
+        if type(k) ~= "number" then
+            return false, "Non-numeric keys are mixed in."
+        elseif k > 0 then
+            counter = counter + 1
+            if max < k then
+                max = k
+            end
+        else
+            return false, "Contains a negative key."
         end
-        _t[i] = nil
     end
-    if next(_t) then
-        return false, "Non-numeric keys are mixed in."
+
+    if max == counter then
+        return true
     end
-    return true
+    return false, "No sequential numbering."
 end
 
 local function is_any(a)
